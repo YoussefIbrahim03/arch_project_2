@@ -79,17 +79,12 @@ int LOAD(int rs1, int offset)
     return content;
 }
 
-void STORE(int rs1, int rs2, int offset, vector<string>& Output)
+void STORE(int rs1, int rs2, int offset)
 {
-
-        int address = registers[rs2];
-        address += offset;
-        int content = (registers[rs1]) & 0xFFFF;
-        store_content(address, content);
-        progcount++;
-        // cout<<"SW: Content of R"<<rs1<<" is stored in the memory with an offset of "<<offset<<endl;
-        cout << "SW: Content of word R" << rs1 << " is stored in the memory starting from address " << registers[rs2] << " with an offset of " << offset << endl;
-        cout << "Updated Program Count: " << progcount << endl;
+    int address = rs2;
+    address += offset;
+    int content = (rs1) & 0xFFFF;
+    store_content(address, content);
 }
 
 void BEQ(int rs1, int rs2, int offset, vector<string>& Output)
@@ -129,7 +124,7 @@ int SUB(int rs1, int rs2)
 
 int NOR(int rs1, int rs2)
 {
-    return (!(rs1 | rs2));
+    return (~(rs1 | rs2));
 }
 
 int MUL(int rs1,int rs2)
@@ -287,11 +282,16 @@ void issue(vector<string> lines,string& opcode, string& rd, string& rs1, string&
     }
     
     bool no_waw=true;
-    for(int i=0; i<15;i++)
+    if(opcode!="STORE"||opcode!="BEQ"||opcode!="CALL"||opcode!="RET")
     {
-        if(GetReg(rd)==rs[i].rd)
+        
+        for(int i=0; i<15;i++)
         {
-            no_waw=false;
+
+            if(GetReg(rd)==rs[i].rd && (i!=2||i!=3))
+            {
+                no_waw=false;
+            }
         }
     }
     
@@ -811,7 +811,7 @@ void execute(string opcode, string rd, string rs1, string rs2, int offset, strin
                 }
                 else if(instructions[rs[i].instruction].exec_end==clock_cycle)
                 {
-                    //STORE(rd,rs1,offset);
+                    STORE(rs[i].vj,rs[i].vk,rs[i].address);
                     rs[i].writeflag=true;
                 }
             }
