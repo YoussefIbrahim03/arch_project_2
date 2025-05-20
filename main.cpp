@@ -23,6 +23,7 @@ struct reservation_station
     int instruction=-1;
     bool writeflag=false;
     int to_write=-1;
+    int rd=-1;
 };
 
 struct nums{
@@ -70,12 +71,12 @@ void store_content(int address, int content)
     cerr << "Error: Memory address " << address << " not found." << endl;
 }
 
-void LOAD(int rd, int rs1, int offset, vector<string>& Output)
+int LOAD(int rs1, int offset)
 {
-        int address = registers[rs1];
-        address += offset;
-        int content = get_content(address);
-        registers[rd] = registers[rd] + content;
+    int address = rs1;
+    address += offset;
+    int content = get_content(address);
+    return content;
 }
 
 void STORE(int rs1, int rs2, int offset, vector<string>& Output)
@@ -207,7 +208,7 @@ int GetReg(string regname) {
 }
 
 
-void issue(vector<string> lines,string& opcode, string& rd, string& rs1, string& rs2, string& offset, string& name)
+void issue(vector<string> lines,string& opcode, string& rd, string& rs1, string& rs2, int& offset, string& name)
 {
     int commandCount = lines.size();
 
@@ -220,7 +221,7 @@ void issue(vector<string> lines,string& opcode, string& rd, string& rs1, string&
 
 
             istringstream ss(command);
-            int imm = 0, offset = 0;
+            int imm = 0;
             char openParen, closeParen;
             ss >> opcode;
             transform(opcode.begin(), opcode.end(), opcode.begin(), ::toupper);
@@ -284,10 +285,21 @@ void issue(vector<string> lines,string& opcode, string& rd, string& rs1, string&
     {
         return;
     }
+    
+    bool no_waw=true;
+    for(int i=0; i<15;i++)
+    {
+        if(GetReg(rd)==rs[i].rd)
+        {
+            no_waw=false;
+        }
+    }
+    
     nums inststat;
     inststat.issued=clock_cycle;
+    
     if (opcode == "ADD") {
-        if(valid_add_sub()){
+        if(valid_add_sub()&&no_waw){
             if(rs[7].busy==false)
             {
                 progcount++;
@@ -307,6 +319,7 @@ void issue(vector<string> lines,string& opcode, string& rd, string& rs1, string&
                 else{
                     rs[7].qk=reg_status.at(GetReg(rs2));
                 }
+                rs[7].rd=GetReg(rd);
                 reg_status.at(GetReg(rd))=rs[7].name;
                 
             }
@@ -329,6 +342,7 @@ void issue(vector<string> lines,string& opcode, string& rd, string& rs1, string&
                 else{
                     rs[8].qk=reg_status.at(GetReg(rs2));
                 }
+                rs[8].rd=GetReg(rd);
                 reg_status.at(GetReg(rd))=rs[8].name;
                 
             }
@@ -351,6 +365,7 @@ void issue(vector<string> lines,string& opcode, string& rd, string& rs1, string&
                 else{
                     rs[9].qk=reg_status.at(GetReg(rs2));
                 }
+                rs[9].rd=GetReg(rd);
                 reg_status.at(GetReg(rd))=rs[9].name;
                 
             }
@@ -373,6 +388,7 @@ void issue(vector<string> lines,string& opcode, string& rd, string& rs1, string&
                 else{
                     rs[10].qk=reg_status.at(GetReg(rs2));
                 }
+                rs[10].rd=GetReg(rd);
                 reg_status.at(GetReg(rd))=rs[10].name;
                 
             }
@@ -380,7 +396,7 @@ void issue(vector<string> lines,string& opcode, string& rd, string& rs1, string&
         }
     }
     else if (opcode == "SUB") {
-        if(valid_add_sub()){
+        if(valid_add_sub()&&no_waw){
             if(rs[7].busy==false)
             {
                 progcount++;
@@ -400,6 +416,7 @@ void issue(vector<string> lines,string& opcode, string& rd, string& rs1, string&
                 else{
                     rs[7].qk=reg_status.at(GetReg(rs2));
                 }
+                rs[7].rd=GetReg(rd);
                 reg_status.at(GetReg(rd))=rs[7].name;
                 
             }
@@ -422,6 +439,7 @@ void issue(vector<string> lines,string& opcode, string& rd, string& rs1, string&
                 else{
                     rs[8].qk=reg_status.at(GetReg(rs2));
                 }
+                rs[8].rd=GetReg(rd);
                 reg_status.at(GetReg(rd))=rs[8].name;
                 
             }
@@ -444,6 +462,7 @@ void issue(vector<string> lines,string& opcode, string& rd, string& rs1, string&
                 else{
                     rs[9].qk=reg_status.at(GetReg(rs2));
                 }
+                rs[9].rd=GetReg(rd);
                 reg_status.at(GetReg(rd))=rs[9].name;
                 
             }
@@ -466,13 +485,14 @@ void issue(vector<string> lines,string& opcode, string& rd, string& rs1, string&
                 else{
                     rs[10].qk=reg_status.at(GetReg(rs2));
                 }
+                rs[10].rd=GetReg(rd);
                 reg_status.at(GetReg(rd))=rs[10].name;
                 
             }
 
         }
     }
-    else if (opcode == "NOR") {
+    else if (opcode == "NOR"&&no_waw) {
         if(valid_nor())
         {
             if(rs[11].busy==false)
@@ -494,6 +514,7 @@ void issue(vector<string> lines,string& opcode, string& rd, string& rs1, string&
                 else{
                     rs[11].qk=reg_status.at(GetReg(rs2));
                 }
+                rs[11].rd=GetReg(rd);
                 reg_status.at(GetReg(rd))=rs[11].name;
                 
             }
@@ -516,12 +537,13 @@ void issue(vector<string> lines,string& opcode, string& rd, string& rs1, string&
                 else{
                     rs[12].qk=reg_status.at(GetReg(rs2));
                 }
+                rs[12].rd=GetReg(rd);
                 reg_status.at(GetReg(rd))=rs[12].name;
                 
             }
         }
     }
-    else if (opcode == "MUL") {
+    else if (opcode == "MUL"&&no_waw) {
         if(valid_mul())
         {
             if(rs[13].busy==false)
@@ -543,6 +565,7 @@ void issue(vector<string> lines,string& opcode, string& rd, string& rs1, string&
                 else{
                     rs[13].qk=reg_status.at(GetReg(rs2));
                 }
+                rs[13].rd=GetReg(rd);
                 reg_status.at(GetReg(rd))=rs[13].name;
                 
             }
@@ -565,12 +588,13 @@ void issue(vector<string> lines,string& opcode, string& rd, string& rs1, string&
                 else{
                     rs[14].qk=reg_status.at(GetReg(rs2));
                 }
+                rs[14].rd=GetReg(rd);
                 reg_status.at(GetReg(rd))=rs[14].name;
                 
             }
         }
     }
-    else if (opcode == "LOAD") {
+    else if (opcode == "LOAD"&&no_waw) {
         if(valid_load())
         {
             if(rs[0].busy==false)
@@ -586,7 +610,8 @@ void issue(vector<string> lines,string& opcode, string& rd, string& rs1, string&
                 else{
                     rs[0].qj=reg_status.at(GetReg(rs1));
                 }
-                rs[0].address=stoi(offset);
+                rs[0].rd=GetReg(rd);
+                rs[0].address=offset;
                 reg_status.at(GetReg(rd))=rs[0].name;
                 
             }
@@ -603,13 +628,14 @@ void issue(vector<string> lines,string& opcode, string& rd, string& rs1, string&
                 else{
                     rs[1].qj=reg_status.at(GetReg(rs1));
                 }
-                rs[1].address=stoi(offset);
+                rs[0].rd=GetReg(rd);
+                rs[1].address=offset;
                 reg_status.at(GetReg(rd))=rs[1].name;
                 
             }
         }
     }
-    else if (opcode == "STORE") {
+    else if (opcode == "STORE"&&no_waw) {
         if(valid_store())
         {
             if(rs[2].busy==false)
@@ -631,7 +657,7 @@ void issue(vector<string> lines,string& opcode, string& rd, string& rs1, string&
                 else{
                     rs[2].qk=reg_status.at(GetReg(rs2));
                 }
-                rs[2].address=stoi(offset);
+                rs[2].address=offset;
                 
             }
             else if(rs[3].busy==false)
@@ -653,12 +679,12 @@ void issue(vector<string> lines,string& opcode, string& rd, string& rs1, string&
                 else{
                     rs[3].qk=reg_status.at(GetReg(rs2));
                 }
-                rs[3].address=stoi(offset);
+                rs[3].address=offset;
                 
             }
         }
     }
-    else if (opcode == "BEQ") {
+    else if (opcode == "BEQ"&&no_waw) {
         if(valid_beq())
         {
             if(rs[4].busy==false)
@@ -680,7 +706,7 @@ void issue(vector<string> lines,string& opcode, string& rd, string& rs1, string&
                 else{
                     rs[4].qk=reg_status.at(GetReg(rs2));
                 }
-                rs[4].address=stoi(offset);
+                rs[4].address=offset;
                 
             }
             else if(rs[5].busy==false)
@@ -702,12 +728,12 @@ void issue(vector<string> lines,string& opcode, string& rd, string& rs1, string&
                 else{
                     rs[5].qk=reg_status.at(GetReg(rs2));
                 }
-                rs[5].address=stoi(offset);
+                rs[5].address=offset;
                 
             }
         }
     }
-    else if (opcode == "CALL") {
+    else if (opcode == "CALL"&&no_waw) {
         if(valid_call_ret())
         {
             if(rs[6].busy==false)
@@ -722,7 +748,7 @@ void issue(vector<string> lines,string& opcode, string& rd, string& rs1, string&
            
         }
     }
-    else if (opcode == "RET") {
+    else if (opcode == "RET"&&no_waw) {
         if(valid_call_ret())
         {
             if(rs[6].busy==false)
@@ -746,7 +772,7 @@ void issue(vector<string> lines,string& opcode, string& rd, string& rs1, string&
     }
 }
 
-void execute(string opcode, string rd, string rs1, string rs2, string offset, string name)
+void execute(string opcode, string rd, string rs1, string rs2, int offset, string name)
 {
     for(int i=0;i<15;i++)
     {
@@ -760,7 +786,7 @@ void execute(string opcode, string rd, string rs1, string rs2, string offset, st
             {
                 if(instructions[rs[i].instruction].exec_start==-1)
                 {
-                    if((rs[i].vj!=-1)&&(rs[i].vk!=-1)&&(instructions[rs[i].instruction].issued!=clock_cycle))
+                    if((rs[i].vj!=-1)&&(instructions[rs[i].instruction].issued!=clock_cycle))
                     {
                         instructions[rs[i].instruction].exec_start=clock_cycle;
                         instructions[rs[i].instruction].exec_end=instructions[rs[i].instruction].exec_start+load_exec-1;
@@ -768,7 +794,7 @@ void execute(string opcode, string rd, string rs1, string rs2, string offset, st
                 }
                 else if(instructions[rs[i].instruction].exec_end==clock_cycle)
                 {
-                    //rs[i].to_write=LOAD(rd,rs1,offset);
+                    rs[i].to_write=LOAD(rs[i].vj,rs[i].address);
                     rs[i].writeflag=true;
                 }
                     
@@ -899,7 +925,8 @@ void write()
         }
         else
         {
-            if(rs[i].writeflag&&(instructions[rs[i].instruction].exec_end!=clock_cycle))
+            bool allow_write=true;
+            if(rs[i].writeflag&&(instructions[rs[i].instruction].exec_end!=clock_cycle)&&(allow_write))
             {
                 if(rs[i].to_write!=-1)
                 {
@@ -938,6 +965,7 @@ void write()
                 rs[i].instruction=-1;
                 rs[i].writeflag=0;
                 rs[i].to_write=-1;
+                rs[i].rd=-1;
             }
         }
     }
@@ -962,7 +990,8 @@ void tomasulo(vector<string> lines)
     rs[13].name = "mul1";
     rs[14].name = "mul2";
     
-    string opcode, rd, rs1, rs2, offset, name;
+    string opcode, rd, rs1, rs2, name;
+    int offset;
     
     
     while(true)
