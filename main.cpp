@@ -21,7 +21,7 @@ struct reservation_station
     int address=-1;
     string label="";
     int instruction=-1;
-    int writeflag=0;
+    bool writeflag=false;
     int to_write=-1;
 };
 
@@ -280,6 +280,10 @@ void issue(vector<string> lines,string& opcode, string& rd, string& rs1, string&
             }
 
         }
+    else
+    {
+        return;
+    }
     nums inststat;
     inststat.issued=clock_cycle;
     if (opcode == "ADD") {
@@ -756,7 +760,7 @@ void execute(string opcode, string rd, string rs1, string rs2, string offset, st
             {
                 if(instructions[rs[i].instruction].exec_start==-1)
                 {
-                    if((rs[i].vj!=-1)&&(rs[i].vk!=-1))
+                    if((rs[i].vj!=-1)&&(rs[i].vk!=-1)&&(instructions[rs[i].instruction].issued!=clock_cycle))
                     {
                         instructions[rs[i].instruction].exec_start=clock_cycle;
                         instructions[rs[i].instruction].exec_end=instructions[rs[i].instruction].exec_start+load_exec-1;
@@ -765,13 +769,13 @@ void execute(string opcode, string rd, string rs1, string rs2, string offset, st
                 else if(instructions[rs[i].instruction].exec_end==clock_cycle)
                 {
                     //rs[i].to_write=LOAD(rd,rs1,offset);
-                    rs[i].writeflag=1;
+                    rs[i].writeflag=true;
                 }
                     
             }
             if(i==2||i==3)
             {
-                if(instructions[rs[i].instruction].exec_start==-1)
+                if(instructions[rs[i].instruction].exec_start==-1&&(instructions[rs[i].instruction].issued!=clock_cycle))
                 {
                     if((rs[i].vj!=-1)&&(rs[i].vk!=-1))
                     {
@@ -782,12 +786,12 @@ void execute(string opcode, string rd, string rs1, string rs2, string offset, st
                 else if(instructions[rs[i].instruction].exec_end==clock_cycle)
                 {
                     //STORE(rd,rs1,offset);
-                    rs[i].writeflag=1;
+                    rs[i].writeflag=true;
                 }
             }
             if(i==4||i==5)
             {
-                if(instructions[rs[i].instruction].exec_start==-1)
+                if(instructions[rs[i].instruction].exec_start==-1&&(instructions[rs[i].instruction].issued!=clock_cycle))
                 {
                     if((rs[i].vj!=-1)&&(rs[i].vk!=-1))
                     {
@@ -798,12 +802,12 @@ void execute(string opcode, string rd, string rs1, string rs2, string offset, st
                 else if(instructions[rs[i].instruction].exec_end==clock_cycle)
                 {
                     //BEQ(rd,rs1,offset);
-                    rs[i].writeflag=1;
+                    rs[i].writeflag=true;
                 }
             }
             if(i==6)
             {
-                if(instructions[rs[i].instruction].exec_start==-1)
+                if(instructions[rs[i].instruction].exec_start==-1&&(instructions[rs[i].instruction].issued!=clock_cycle))
                 {
                     if((rs[i].vj!=-1)&&(rs[i].vk!=-1))
                     {
@@ -821,13 +825,13 @@ void execute(string opcode, string rd, string rs1, string rs2, string offset, st
                     {
                         //RET(rs1);
                     }
-                    rs[i].writeflag=1;
+                    rs[i].writeflag=true;
                 }
 
             }
             if(i==7||i==8||i==9||i==10)
             {
-                if(instructions[rs[i].instruction].exec_start==-1)
+                if(instructions[rs[i].instruction].exec_start==-1&&(instructions[rs[i].instruction].issued!=clock_cycle))
                 {
                     if((rs[i].vj!=-1)&&(rs[i].vk!=-1))
                     {
@@ -845,13 +849,13 @@ void execute(string opcode, string rd, string rs1, string rs2, string offset, st
                     {
                         rs[i].to_write=SUB(rs[i].vj,rs[i].vk);
                     }
-                    rs[i].writeflag=1;
+                    rs[i].writeflag=true;
                 }
 
             }
             if(i==11||i==12)
             {
-                if(instructions[rs[i].instruction].exec_start==-1)
+                if(instructions[rs[i].instruction].exec_start==-1&&(instructions[rs[i].instruction].issued!=clock_cycle))
                 {
                     if((rs[i].vj!=-1)&&(rs[i].vk!=-1))
                     {
@@ -862,12 +866,12 @@ void execute(string opcode, string rd, string rs1, string rs2, string offset, st
                 else if(instructions[rs[i].instruction].exec_end==clock_cycle)
                 {
                     rs[i].to_write=NOR(rs[i].vj,rs[i].vk);
-                    rs[i].writeflag=1;
+                    rs[i].writeflag=true;
                 }
             }
             if(i==13||i==14)
             {
-                if(instructions[rs[i].instruction].exec_start==-1)
+                if(instructions[rs[i].instruction].exec_start==-1&&(instructions[rs[i].instruction].issued!=clock_cycle))
                 {
                     if((rs[i].vj!=-1)&&(rs[i].vk!=-1))
                     {
@@ -878,7 +882,7 @@ void execute(string opcode, string rd, string rs1, string rs2, string offset, st
                 else if(instructions[rs[i].instruction].exec_end==clock_cycle)
                 {
                     rs[i].to_write=MUL(rs[i].vj,rs[i].vk);
-                    rs[i].writeflag=1;
+                    rs[i].writeflag=true;
                 }
             }
         }
@@ -895,7 +899,7 @@ void write()
         }
         else
         {
-            if(rs[i].writeflag==1)
+            if(rs[i].writeflag&&(instructions[rs[i].instruction].exec_end!=clock_cycle))
             {
                 if(rs[i].to_write!=-1)
                 {
@@ -906,6 +910,20 @@ void write()
                             registers[j]=rs[i].to_write;
                             reg_status[j]="";
                         }
+                    }
+                    
+                }
+                for(int k=0;k<15;k++)
+                {
+                    if(rs[i].name==rs[k].qj)
+                    {
+                        rs[k].qj="";
+                        rs[k].vj=rs[i].to_write;
+                    }
+                    if(rs[i].name==rs[k].qk)
+                    {
+                        rs[k].qk="";
+                        rs[k].vk=rs[i].to_write;
                     }
                 }
                 instructions[rs[i].instruction].write=clock_cycle;
@@ -950,9 +968,7 @@ void tomasulo(vector<string> lines)
     while(true)
     {
         issue(lines, opcode, rd, rs1, rs2, offset, name);
-        clock_cycle++;
         execute(opcode, rd, rs1, rs2, offset, name);
-        clock_cycle++;
         write();
         clock_cycle++;
         for(int i=0;i<instructions.size();i++)
