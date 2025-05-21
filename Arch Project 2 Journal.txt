@@ -1,0 +1,12 @@
+May 14, 4:00PM: Youssef and Seif discussed the Tomasulo design and agreed on using reservation stations and a register status table.
+May 15, 3:00PM: Seif worked on parsing instruction formats and handling labels for branches.
+May 15, 6:00PM: Youssef set up the reservation station structure and initialized registers and memory.
+May 16, 2:00PM: Youssef and Seif implemented the issue stage with hazard detection.
+May 16, 7:00PM: Youssef coded the execution logic for ALU, memory, and branch units.
+May 17, 4:00PM: Seif finalized label resolution and updated the PC logic for control instructions.
+May 18, 5:00PM: Youssef handled write-back logic, CDB broadcasting, and instruction flushing.
+May 19, 6:00PM: Youssef and Seif reviewed the simulation flow and verified stage transitions.
+May 20, 2:00PM: Seif tested instruction parsing and fixed BEQ operand bugs.
+May 20, 5:00PM: Youssef added CALL/RET logic and updated PC handling via R1.
+May 20, 3:00PM: Both ran tests and validated instruction timings cycle-by-cycle.
+May 20, 5:00PM: Youssef finalized the output formatting, Seif cleaned up file input handling.
